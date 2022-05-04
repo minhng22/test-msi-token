@@ -41,12 +41,12 @@ type MemberClusterMembershipReconciler struct {
 
 func (r *MemberClusterMembershipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
-	managedId := "c7c3aee7-83a1-4f8a-8a37-d233ddf02c19"
+	clientId := "c7c3aee7-83a1-4f8a-8a37-d233ddf02c19"
 	//updatedFoo := "some-updated-foo"
 	//hostUrl := "demopoc1hu-demo-poc1-0c513b-18f61746.hcp.eastus.azmk8s.io"
 
-	l.Info("Starting membership reconciliation loop", "client id", managedId)
-	clientID := azidentity.ClientID(managedId)
+	l.Info("Starting membership reconciliation loop", "client id", clientId)
+	clientID := azidentity.ClientID(clientId)
 	opts := azidentity.ManagedIdentityCredentialOptions{ID: clientID}
 	cred, _ := azidentity.NewManagedIdentityCredential(&opts)
 
