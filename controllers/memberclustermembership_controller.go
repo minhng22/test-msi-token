@@ -23,6 +23,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	mngiov1 "mng.io/test-msi/api/mng.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,44 +42,45 @@ type MemberClusterMembershipReconciler struct {
 
 func (r *MemberClusterMembershipReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
-	clientId := "c7c3aee7-83a1-4f8a-8a37-d233ddf02c19"
-	//updatedFoo := "some-updated-foo"
-	//hostUrl := "demopoc1hu-demo-poc1-0c513b-18f61746.hcp.eastus.azmk8s.io"
+	scope := "https://graph.microsoft.com/.default"
+	hostUrl := ""
 
-	l.Info("Starting membership reconciliation loop", "client id", clientId)
-	clientID := azidentity.ClientID(clientId)
-	opts := azidentity.ManagedIdentityCredentialOptions{ID: clientID}
-	cred, _ := azidentity.NewManagedIdentityCredential(&opts)
+	l.Info("starting reconciliation loop")
+	cred, err := azidentity.NewClientSecretCredential("72f988bf-86f1-41af-91ab-2d7cd011db47", "12461fbc-e437-4ac0-b2c2-b55e4d0199b0", "d1Fe7RL2~1jFFXWWLcIpVCPvbEp-WCTY0F", nil)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "fail getting credentials")
+	}
+	l.Info("Azure credentials ", "cred", cred)
 
 	t, err := cred.GetToken(ctx, policy.TokenRequestOptions{
-		Scopes: []string{"hub-cluster-crud"},
+		Scopes: []string{scope},
 	})
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fail getting token")
 	}
 	l.Info("Current access token ", "token", *t)
 
-	//
-	//var demoCluster mngiov1.MemberClusterMembership
-	//if err := r.Get(ctx, req.NamespacedName, &demoCluster); err != nil {
-	//	return ctrl.Result{}, errors.Wrap(err, "fail getting demo kind")
-	//}
-	//
-	//cf := rest.Config{
-	//	BearerToken: hubClusterAccessToken.Token,
-	//	Host:        hostUrl,
-	//}
-	//
-	//k8sClient, err := client.New(&cf, client.Options{Scheme: r.Scheme})
-	//
-	//if err != nil {
-	//	return ctrl.Result{}, errors.Wrap(err, "fail creating client")
-	//}
-	//
-	//demoCluster.Spec.Foo = updatedFoo
-	//if err := k8sClient.Update(ctx, &demoCluster); err != nil {
-	//	return ctrl.Result{}, errors.Wrap(err, "error updating hub cluster")
-	//}
+	var demoCluster mngiov1.MemberClusterMembership
+	if err := r.Get(ctx, req.NamespacedName, &demoCluster); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "fail getting demo kind")
+	}
+	l.Info("Creating kubeconfig", "hostUrl", hostUrl)
+
+	cf := rest.Config{
+		BearerToken: t.Token,
+		Host:        hostUrl,
+	}
+
+	k8sClient, err := client.New(&cf, client.Options{Scheme: r.Scheme})
+
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "fail creating client")
+	}
+
+	demoCluster.Spec.Foo = "updatedFoo"
+	if err := k8sClient.Update(ctx, &demoCluster); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "error updating hub cluster")
+	}
 
 	return ctrl.Result{}, nil
 }
