@@ -19,7 +19,7 @@ metadata:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: User
-    name: <MEMBER-CLUSTER-MANAGED-IDENTITY-ID>
+    name: <MEMBER-CLUSTER-MANAGED-IDENTITY-OBJECT-ID>
 roleRef:
   kind: Role
   name: member-a
