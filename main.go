@@ -55,7 +55,7 @@ func main() {
 	}
 
 	for {
-		fmt.Printf("start pod listing loop")
+		fmt.Printf("\nstart pod listing loop")
 		// this should fail as access wasn't granted for namespace 'default'
 		pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
@@ -80,7 +80,7 @@ func main() {
 		} else {
 			fmt.Printf("\nfound pod %s in namespace %s\n", Pod, Namespace)
 		}
-		fmt.Printf("end pod listing loop")
+		fmt.Printf("\nend pod listing loop")
 		time.Sleep(1 * time.Second)
 	}
 }
