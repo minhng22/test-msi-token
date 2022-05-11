@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: member-agent
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: member
+  template:
+    metadata:
+      labels:
+       component: member
+    spec:
+      containers:
+      - image: helayoty/member-agent:v1 
+        name: member-agent
+        imagePullPolicy: Always

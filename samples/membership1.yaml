@@ -1,5 +1,0 @@
-apiVersion: mng.io/v1
-kind: MemberClusterMembership
-metadata:
-  name: membership1
-spec:
