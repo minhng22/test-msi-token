@@ -22,10 +22,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/pkg/errors"
-	v13 "k8s.io/api/core/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	mngiov1 "mng.io/test-msi/api/mng.io/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -69,35 +66,24 @@ func (r *MemberClusterMembershipReconciler) Reconcile(ctx context.Context, req c
 	}
 	l.Info("Creating kubeconfig", "hubServerUrl", hubServerUrl)
 
-	// This ca cert comes from the field certificate-authority-data in the member cluster kubeconfig
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fail creating cert")
 	}
 	cf := rest.Config{
-		BearerToken: (*t).Token,
+		BearerToken: t.Token,
 		Host:        hubServerUrl,
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(&cf)
+	k8sClient, err := client.New(&cf, client.Options{Scheme: r.Scheme})
 
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fail creating client")
 	}
 
 	demoCluster.Spec.Foo = "updatedFoo"
-	dPod := &v13.Pod{
-		ObjectMeta: v12.ObjectMeta{Name: "demo-pod", Namespace: "default"},
-		Spec: v13.PodSpec{
-			Containers: []v13.Container{
-				{Name: "demo-container", Image: "nginx"},
-			},
-		},
-	}
-	pod, err := k8sClient.CoreV1().Pods("default").Create(ctx, dPod, v12.CreateOptions{})
-	if err != nil {
+	if err := k8sClient.Update(ctx, &demoCluster); err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "error updating hub cluster")
 	}
-	l.Info("Pod created", "pod", pod)
 
 	return ctrl.Result{}, nil
 }
